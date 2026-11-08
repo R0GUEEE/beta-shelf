@@ -1,0 +1,105 @@
+name: Build BetaShelf
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install XcodeGen
+        run: |
+          if ! command -v xcodegen >/dev/null; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Generate Xcode project
+        working-directory: BetaShelf
+        run: |
+          xcodegen generate
+          ls -la
+
+      - name: Validate bundled catalogue
+        working-directory: BetaShelf
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          data = json.load(open("Resources/catalog.json"))
+          assert isinstance(data, list) and len(data) > 50, "catalogue too small"
+          codes = [d["code"] for d in data]
+          assert len(codes) == len(set(codes)), "duplicate codes"
+          for e in data:
+              assert len(e["code"]) >= 6, e
+              assert e["name"], e
+          print(f"catalogue ok: {len(data)} betas, {len({d['genre'] for d in data})} genres")
+          PY
+
+      - name: Build (Release, unsigned)
+        working-directory: BetaShelf
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project BetaShelf.xcodeproj \
+            -scheme BetaShelf \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            ONLY_ACTIVE_ARCH=NO \
+            build 2>&1 | tee build.log | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
+          if ! grep -q "BUILD SUCCEEDED" build.log; then
+            echo "---- build failures ----"
+            grep -E "error:" build.log | head -60 || true
+            exit 1
+          fi
+
+      - name: Package unsigned IPA
+        working-directory: BetaShelf
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "app: $APP"
+          rm -rf Payload BetaShelf.ipa
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent Payload/BetaShelf.app Payload.zip
+          mv Payload.zip BetaShelf.ipa
+          ls -lh BetaShelf.ipa
+          shasum -a 256 BetaShelf.ipa | tee ipa.sha256
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist"
+          lipo -archs "$APP/BetaShelf" || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BetaShelf-ipa
+          path: |
+            BetaShelf/BetaShelf.ipa
+            BetaShelf/ipa.sha256
+            BetaShelf/build.log
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            BetaShelf/BetaShelf.ipa
+            BetaShelf/ipa.sha256
+          generate_release_notes: true
