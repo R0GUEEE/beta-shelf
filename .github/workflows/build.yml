@@ -30,13 +30,11 @@ jobs:
           xcodegen --version
 
       - name: Generate Xcode project
-        working-directory: BetaShelf
         run: |
           xcodegen generate
           ls -la
 
       - name: Validate bundled catalogue
-        working-directory: BetaShelf
         run: |
           python3 - <<'PY'
           import json, sys
@@ -51,7 +49,6 @@ jobs:
           PY
 
       - name: Build (Release, unsigned)
-        working-directory: BetaShelf
         run: |
           set -o pipefail
           xcodebuild \
@@ -72,7 +69,6 @@ jobs:
           fi
 
       - name: Package unsigned IPA
-        working-directory: BetaShelf
         run: |
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
           echo "app: $APP"
@@ -90,9 +86,9 @@ jobs:
         with:
           name: BetaShelf-ipa
           path: |
-            BetaShelf/BetaShelf.ipa
-            BetaShelf/ipa.sha256
-            BetaShelf/build.log
+            BetaShelf.ipa
+            ipa.sha256
+            build.log
           if-no-files-found: error
 
       - name: Attach to release
@@ -100,6 +96,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            BetaShelf/BetaShelf.ipa
-            BetaShelf/ipa.sha256
+            BetaShelf.ipa
+            ipa.sha256
           generate_release_notes: true
