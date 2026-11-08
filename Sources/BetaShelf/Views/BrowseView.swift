@@ -8,7 +8,7 @@ struct BrowseView: View {
     @State private var query = ""
 
     private var chips: [String] {
-        ["All"] + store.genres.prefix(10).map { $0.0 }
+        ["All"] + store.genres.prefix(10).map { $0.name }
     }
 
     private var visibleApps: [BetaApp] {
@@ -222,7 +222,7 @@ struct BrowseView: View {
     }
 
     private var shelfGenres: [String] {
-        store.genres.filter { $0.1 >= 4 }.prefix(5).map { $0.0 }
+        store.genres.filter { $0.count >= 4 }.prefix(5).map { $0.name }
     }
 
     private func genreShelf(_ genre: String) -> some View {

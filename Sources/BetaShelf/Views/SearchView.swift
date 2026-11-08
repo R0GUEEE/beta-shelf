@@ -67,20 +67,20 @@ struct SearchView: View {
             SectionHeader(title: "Browse categories", subtitle: "\(store.openBetas.count) public betas indexed")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
                       spacing: 12) {
-                ForEach(store.genres.prefix(12), id: \.0) { genre, count in
+                ForEach(store.genres.prefix(12)) { item in
                     Button {
-                        query = genre
+                        query = item.name
                     } label: {
                         ZStack(alignment: .bottomLeading) {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(Theme.gradient(for: genre))
+                                .fill(Theme.gradient(for: item.name))
                                 .frame(height: 78)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(genre)
+                                Text(item.name)
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(.white)
                                     .lineLimit(2)
-                                Text("\(count) betas")
+                                Text("\(item.count) betas")
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(.white.opacity(0.8))
                             }

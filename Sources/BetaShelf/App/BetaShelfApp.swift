@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct BetaShelfApp: App {
-    @StateObject private var store = CatalogStore.shared
+    @StateObject private var store = CatalogStore()
     @AppStorage("appearance") private var appearance: String = "system"
 
     var body: some Scene {

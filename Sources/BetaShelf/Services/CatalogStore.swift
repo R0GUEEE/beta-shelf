@@ -1,6 +1,12 @@
 import Foundation
 import SwiftUI
 
+struct GenreCount: Identifiable, Hashable {
+    var name: String
+    var count: Int
+    var id: String { name }
+}
+
 struct StatusRecord: Codable {
     var status: BetaStatus
     var checkedAt: Date
@@ -128,13 +134,13 @@ final class CatalogStore: ObservableObject {
             .sorted { ($0.addedAt ?? .distantPast) > ($1.addedAt ?? .distantPast) }
     }
 
-    var genres: [(String, Int)] {
+    var genres: [GenreCount] {
         var counts: [String: Int] = [:]
         for app in openBetas where !app.genre.isEmpty {
             counts[app.genre, default: 0] += 1
         }
         return counts.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
-            .map { ($0.key, $0.value) }
+            .map { GenreCount(name: $0.key, count: $0.value) }
     }
 
     func apps(in genre: String) -> [BetaApp] {

@@ -32,8 +32,7 @@ struct BetaDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                ShareLink(item: live.shareURL, subject: Text(live.name),
-                          message: Text("Join the \(live.name) beta on TestFlight")) {
+                ShareLink(item: live.shareURL) {
                     Image(systemName: "square.and.arrow.up")
                 }
                 Menu {
