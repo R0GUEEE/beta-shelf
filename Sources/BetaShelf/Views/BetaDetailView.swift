@@ -133,7 +133,11 @@ struct BetaDetailView: View {
     private var actionRow: some View {
         HStack(spacing: 12) {
             Button {
-                openURL(live.joinURL)
+                openURL(live.joinURL) { accepted in
+                    if !accepted, let store = URL(string: "https://apps.apple.com/app/testflight/id899247664") {
+                        openURL(store)
+                    }
+                }
             } label: {
                 VStack(spacing: 3) {
                     Text("Join Beta")
