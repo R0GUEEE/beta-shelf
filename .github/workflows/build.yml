@@ -78,7 +78,7 @@ jobs:
           rm -rf Payload BetaShelf.ipa
           mkdir -p Payload
           cp -R "$APP" Payload/
-          /usr/bin/ditto -c -k --sequesterRsrc Payload BetaShelf.ipa
+          zip -qry BetaShelf.ipa Payload
           unzip -l BetaShelf.ipa | head -20
           unzip -l BetaShelf.ipa | grep -q "Payload/BetaShelf.app/BetaShelf" || (echo "bad ipa layout"; exit 1)
           ls -lh BetaShelf.ipa
